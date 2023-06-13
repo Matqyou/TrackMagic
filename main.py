@@ -8,7 +8,7 @@ Dependencies:
  - pytube used to download YouTube streams. (pip install pytube)
  - FFmpeg used to convert and merge streams.
 
-Made by Mαtq#0035 on Discord
+Made by matq on Discord
 User ID 243713302750953482 on https://discord.id/ & https://lookup.guru/
 """
 
@@ -16,15 +16,25 @@ from Record import *
 import pytube
 import ffmpy
 import os
+
+ALLOWED_KEYS = [
+    'video_id',
+    'title',
+    'length',
+    'progressive',
+    'video',
+    'video_stream',
+    'audio',
+    'audio_stream'
+]
+
 records = {}
 RECORDS_FILE = 'records'
-RECORD_SEPERATOR = '-= End of record =-\n'
 VIDEO_DIR = 'Videos\\'
 TRACK_DIR = 'Audio\\'
 TEMP_DIR = 'Temp\\'
 TEMP_VIDEO_DIR = TEMP_DIR + 'Video\\'
 TEMP_TRACK_DIR = TEMP_DIR + 'Audio\\'
-os.system('')
 GREEN = '\033[32m'
 YELLOW = '\033[33m'
 RED = '\033[31m'
@@ -45,7 +55,7 @@ def cleanup_temp():
         for subdir in os.listdir(path):
             subdir = f'{path}{subdir}\\'
             for file in os.listdir(subdir):
-                os.remove(subdir+file)
+                os.remove(subdir + file)
             os.rmdir(subdir)
         os.rmdir(path)
 
@@ -91,11 +101,14 @@ def stream_is_progressive(stream: pytube.Stream):
 #         process_video(session)
 
 
-def process_video(video_string: str, auto_video = False, auto_audio = False):
-    try: session = pytube.YouTube(url=video_string)
+def process_video(video_string: str, auto_video=False, auto_audio=False):
+    try:
+        session = pytube.YouTube(url=video_string)
     except:
-        try: session = pytube.YouTube(url=f'https://www.youtube.com/watch?v={video_string}')
-        except: print('Invalid video string supplied'); return
+        try:
+            session = pytube.YouTube(url=f'https://www.youtube.com/watch?v={video_string}')
+        except:
+            print('Invalid video string supplied'); return
 
     video_id = session.video_id
     id_text = f'{UNDERLINE}{video_id}{UNUNDERLINE}'
@@ -128,13 +141,17 @@ def process_video(video_string: str, auto_video = False, auto_audio = False):
     length = record.length
 
     title_text = f'{BOLD}{record.title}{UNBOLD}'
-    length_text = f'{length//60:02}:{length%60:02}' if length != -1 else f'no length'
+    length_text = f'{length // 60:02}:{length % 60:02}' if length != -1 else f'no length'
     print(f'{title_text} | {id_text} | {length_text} | {index_text}{RESETCOLOR}')
 
-    if video_exists: print(f'{UNDERLINE}Video | itag {record.video_stream} | "{record.video}"{UNUNDERLINE}')
-    else: print(f'{UNDERLINE}No video found{UNUNDERLINE}')
-    if audio_exists: print(f'{UNDERLINE}Audio | itag {record.audio_stream} | "{record.audio}"{UNUNDERLINE}')
-    else: print(f'{UNDERLINE}No audio found{UNUNDERLINE}')
+    if video_exists:
+        print(f'{UNDERLINE}Video | itag {record.video_stream} | "{record.video}"{UNUNDERLINE}')
+    else:
+        print(f'{UNDERLINE}No video found{UNUNDERLINE}')
+    if audio_exists:
+        print(f'{UNDERLINE}Audio | itag {record.audio_stream} | "{record.audio}"{UNUNDERLINE}')
+    else:
+        print(f'{UNDERLINE}No audio found{UNUNDERLINE}')
 
     print(record)
 
@@ -142,10 +159,14 @@ def process_video(video_string: str, auto_video = False, auto_audio = False):
         get_video = auto_video
         get_audio = auto_audio
     else:
-        if not video_exists: get_video = input_choice(['y', 'n'], lambda x: x.lower(), 'Video [Y]es or [N]o: ') == 'y'
-        else: get_video = False
-        if not audio_exists: get_audio = input_choice(['y', 'n'], lambda x: x.lower(), 'Audio [Y]es or [N]o: ') == 'y'
-        else: get_audio = False
+        if not video_exists:
+            get_video = input_choice(['y', 'n'], lambda x: x.lower(), 'Video [Y]es or [N]o: ') == 'y'
+        else:
+            get_video = False
+        if not audio_exists:
+            get_audio = input_choice(['y', 'n'], lambda x: x.lower(), 'Audio [Y]es or [N]o: ') == 'y'
+        else:
+            get_audio = False
 
     if video_exists and audio_exists:
         print('Video and Audio already downloaded, nothing to do')
@@ -157,7 +178,8 @@ def process_video(video_string: str, auto_video = False, auto_audio = False):
 
     print()
     if session.age_restricted:
-        print(f'{RED}Video is age restricted and cannot be downloaded with this application (no authentication option){RESETCOLOR}')
+        print(
+            f'{RED}Video is age restricted and cannot be downloaded with this application (no authentication option){RESETCOLOR}')
         return
 
     if not os.path.exists(VIDEO_DIR): os.mkdir(VIDEO_DIR)
@@ -168,7 +190,8 @@ def process_video(video_string: str, auto_video = False, auto_audio = False):
     if get_video and not video_exists:  # Requested video
         video_updated = True
         video_streams = all_streams.filter(type='video')
-        sorted_streams = sorted([stream for stream in video_streams if stream._filesize != 0], key=lambda s: int(s.resolution[:len(s.resolution) - 1]), reverse=True)
+        sorted_streams = sorted([stream for stream in video_streams if stream._filesize != 0],
+                                key=lambda s: int(s.resolution[:len(s.resolution) - 1]), reverse=True)
         video_stream = sorted_streams[0]
         record.progressive = stream_is_progressive(video_stream)
 
@@ -287,21 +310,18 @@ def Initialize():
 
     with open(RECORDS_FILE, 'r', encoding='utf-8') as f:
         content = f.read()
-    containers = [[attr for attr in container.splitlines() if attr] for container in content.split(RECORD_SEPERATOR)]
+    containers = [[attr.split('=') for attr in container.splitlines() if attr] for container in content.split(RECORD_SEPERATOR)]
+    print(containers)
 
     for container in containers:
         record = Record()
-        attributes = [attribute.split('=') for attribute in container]
-        if not attributes: continue  # (Skip empty records/attribute groups)
-        for key, value in attributes:
-            if value == 'None':
-                value = None
-            elif value == 'False':
-                value = False
-            elif value == 'True':
-                value = True
-            elif key == 'length' and value is not None:
-                value = int(value)
+        if not container: continue  # (Skip empty records/attribute groups)
+        for key, value in container:
+            if key not in ALLOWED_KEYS: continue
+            if value == 'None': value = None
+            elif value == 'False': value = False
+            elif value == 'True': value = True
+            elif key == 'length' and value is not None: value = int(value)
             setattr(record, key, value)
         records[record.video_id] = record
 
