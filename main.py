@@ -12,6 +12,7 @@ Made by Mαtq#0035 on Discord
 User ID 243713302750953482 on https://discord.id/ & https://lookup.guru/
 """
 
+from Record import *
 import pytube
 import ffmpy
 import os
@@ -67,18 +68,10 @@ def update_records():
     global records
     new_content = ''
     for record in records.values():
-        new_content += parse_record(record)
+        new_content += record.Parse()
 
     with open(RECORDS_FILE, 'w', encoding='utf-8') as f:
         f.write(new_content)
-
-
-def parse_record(record: dict):
-    parsed = ''
-    for key, value in record.items():
-        parsed += f'{key}={value}\n'
-    parsed += RECORD_SEPERATOR
-    return parsed
 
 
 def stream_is_progressive(stream: pytube.Stream):
@@ -116,42 +109,34 @@ def process_video(video_string: str, auto_video = False, auto_audio = False):
         index_text = f'Loaded #{list(records).index(video_id)}'
         record = records[video_id]
 
-        title = record['title']
-        length = int(record['length'])
-        video_progressive = record['progressive']
-        video_path = record['video']
-        video_itag = record['video_stream']
-        audio_path = record['audio']
-        audio_itag = record['audio_stream']
+        video_exists = record.video is not None
+        audio_exists = record.audio is not None
 
-        video_exists = 'video' in record and record['video'] is not None
-        audio_exists = 'audio' in record and record['audio'] is not None
-
-        if video_exists and not os.path.exists(video_path):
+        if video_exists and not os.path.exists(record.video):
             video_exists = False
-            print('Video has been lost...')
-        if audio_exists and not os.path.exists(audio_path):
+            print('Video file couldn\'t be found..')
+        if audio_exists and not os.path.exists(record.audio):
             audio_exists = False
-            print('Audio has been lost...')
+            print('Audio file couldn\'t be found..')
     else:  # New record
         index_text = f'Created #{len(records)}'
-        title = session.title
-        length = session.length
-        video_progressive = None
-        video_path = None
-        video_itag = None
-        audio_path = None
-        audio_itag = None
+        record = Record()
+        record.video_id = video_id
+        record.title = session.title
+        record.length = session.length
 
+    length = record.length
 
-    title_text = f'{BOLD}{title}{UNBOLD}'
-    length_text = f'{length//60:02}:{length%60:02}'
+    title_text = f'{BOLD}{record.title}{UNBOLD}'
+    length_text = f'{length//60:02}:{length%60:02}' if length != -1 else f'no length'
     print(f'{title_text} | {id_text} | {length_text} | {index_text}{RESETCOLOR}')
 
-    if video_exists: print(f'{UNDERLINE}Video | itag {video_itag} | "{video_path}"{UNUNDERLINE}')
+    if video_exists: print(f'{UNDERLINE}Video | itag {record.video_stream} | "{record.video}"{UNUNDERLINE}')
     else: print(f'{UNDERLINE}No video found{UNUNDERLINE}')
-    if audio_exists: print(f'{UNDERLINE}Audio | itag {audio_itag} | "{audio_path}"{UNUNDERLINE}')
+    if audio_exists: print(f'{UNDERLINE}Audio | itag {record.audio_stream} | "{record.audio}"{UNUNDERLINE}')
     else: print(f'{UNDERLINE}No audio found{UNUNDERLINE}')
+
+    print(record)
 
     if auto_video or auto_audio:
         get_video = auto_video
@@ -185,14 +170,14 @@ def process_video(video_string: str, auto_video = False, auto_audio = False):
         video_streams = all_streams.filter(type='video')
         sorted_streams = sorted([stream for stream in video_streams if stream._filesize != 0], key=lambda s: int(s.resolution[:len(s.resolution) - 1]), reverse=True)
         video_stream = sorted_streams[0]
-        video_progressive = stream_is_progressive(video_stream)
+        record.progressive = stream_is_progressive(video_stream)
 
         print(f'Video stream {video_stream}')
-        if video_progressive:  # Video has both visual and audial
+        if record.progressive:  # Video has both visual and audial
             print(f'Video is progressive, getting video')
             base_video_path = process_video_stream(video_stream, video_progressive)
-            video_path = base_video_path
-            video_itag = video_stream.itag
+            record.video = base_video_path
+            record.video_stream = video_stream.itag
         else:  # Video is interlaced
             print(f'Video is interlaced')
             print(f'Downloading video')
@@ -203,54 +188,36 @@ def process_video(video_string: str, auto_video = False, auto_audio = False):
                 audio_streams = all_streams.filter(type='audio').order_by('abr').desc()
                 audio_stream = audio_streams[0]
                 print(f'Audio stream {audio_stream}')
-                audio_path = process_audio_stream(audio_stream)
-                audio_itag = audio_stream.itag
+                record.audio = process_audio_stream(audio_stream)
+                record.audio_stream = audio_stream.itag
                 audio_exists = True
             else:  # If audio exists, use existing
                 print(f'Found existing audio')
-                audio_path = records[video_id]['audio']
-            video_path = merge_video_audio(base_video_path, audio_path)
-            video_itag = video_stream.itag
+                record.audio = records[video_id]['audio']
+            record.video = merge_video_audio(base_video_path, audio_path)
+            record.video_stream = video_stream.itag
 
     if get_audio and not audio_exists:  # Requested audio
         audio_updated = True
         if video_exists:  # If video exists, take audio from it
             print(f'Getting audio from video')
-            audio_path = process_audio_from_video(video_path)
+            record.audio = process_audio_from_video(video_path)
         else:  # If no video, download individually
             print(f'Downloading audio')
             audio_streams = all_streams.filter(type='audio').order_by('abr').desc()
             audio_stream = audio_streams[0]
             print(f'Audio stream {audio_stream}')
-            audio_path = process_audio_stream(audio_stream)
-            audio_itag = audio_stream.itag
+            record.audio = process_audio_stream(audio_stream)
+            record.audio_stream = audio_stream.itag
 
     if video_id not in records:
-        records[video_id] = {}
-        record = records[video_id]
-        record['video_id'] = video_id
-        record['title'] = title
-        record['length'] = length
-        record['progressive'] = video_progressive
-        record['video'] = video_path
-        record['video_stream'] = video_itag
-        record['audio'] = audio_path
-        record['audio_stream'] = audio_itag
+        records[video_id] = record
 
-        new_content = parse_record(record)
+        new_content = record.Parse()
         with open(RECORDS_FILE, 'a', encoding='utf-8') as f:
             f.write(new_content)
     elif video_updated or audio_updated:
         record = records[video_id]
-
-        if video_updated:
-            record['video'] = video_path
-            record['video_stream'] = video_itag
-            record['progressive'] = video_progressive
-
-        if audio_updated:
-            record['audio'] = audio_path
-            record['audio_stream'] = audio_itag
 
         update_records()
 
@@ -310,9 +277,6 @@ def merge_video_audio(video_path: str, audio_path: str):
     return new_video_path
 
 
-forms = {'v': 'video'}
-
-
 def main():
     os.system('')
     cleanup_temp()
@@ -324,22 +288,19 @@ def main():
     with open(RECORDS_FILE, 'r', encoding='utf-8') as f:
         content = f.read()
     containers = [[attr for attr in container.splitlines() if attr] for container in content.split(RECORD_SEPERATOR)]
+
     for container in containers:
-        result = {}
-        for attribute in container:
-            seperate_at = attribute.find('=')
-            key = attribute[:seperate_at]
-            value = attribute[seperate_at + 1:]
-            if value == 'None':
-                value = None
-            elif value == 'False':
-                value = False
-            elif value == 'True':
-                value = True
-            result[key] = value
-        if 'video_id' in result:
-            video_id = result['video_id']
-            records[video_id] = result
+        record = Record()
+        attributes = [attribute.split('=') for attribute in container]
+        if not attributes: continue  # (Skip empty records/attribute groups)
+        for key, value in attributes:
+            if value == 'None': value = None
+            elif value == 'False': value = False
+            elif value == 'True': value = True
+            elif key == 'length' and value is not None: value = int(value)
+            setattr(record, key, value)
+        records[record.video_id] = record
+
     print(f'Loaded {len(records)} record/s')
 
     while True:
@@ -352,8 +313,7 @@ def main():
         print()
         first_char = user_choice[0]
         if first_char in 'v':
-            form_name = forms[first_char]
-            print(f'Enter {form_name} url or id')
+            print(f'Enter video url or id')
             video_string = input('> ')
 
             print()
@@ -368,11 +328,9 @@ def main():
         elif first_char in 'r':
             for video_id in records:
                 record = records[video_id]
-                video_path = records[video_id]['video']
-                audio_path = records[video_id]['audio']
 
-                get_video = video_path and not os.path.exists(video_path)
-                get_audio = audio_path and not os.path.exists(audio_path)
+                get_video = record.video and not os.path.exists(record.video)
+                get_audio = record.audio and not os.path.exists(record.audio)
                 if get_video or get_audio:
                     process_video(video_id, get_video, get_audio)
         else:
