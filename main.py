@@ -277,7 +277,7 @@ def merge_video_audio(video_path: str, audio_path: str):
     return new_video_path
 
 
-def main():
+def Initialize():
     os.system('')
     cleanup_temp()
 
@@ -294,14 +294,22 @@ def main():
         attributes = [attribute.split('=') for attribute in container]
         if not attributes: continue  # (Skip empty records/attribute groups)
         for key, value in attributes:
-            if value == 'None': value = None
-            elif value == 'False': value = False
-            elif value == 'True': value = True
-            elif key == 'length' and value is not None: value = int(value)
+            if value == 'None':
+                value = None
+            elif value == 'False':
+                value = False
+            elif value == 'True':
+                value = True
+            elif key == 'length' and value is not None:
+                value = int(value)
             setattr(record, key, value)
         records[record.video_id] = record
 
     print(f'Loaded {len(records)} record/s')
+
+
+def main():
+    Initialize()
 
     while True:
         print('|Select the object to process| [V]ideo| [P]laylist (not working yet)| [R]epair'.replace('|', '\n'))
