@@ -98,7 +98,7 @@ def stream_is_progressive(stream: pytube.Stream):
 #         process_video(session)
 
 
-def process_video(video_string: str):
+def process_video(video_string: str, auto_video = False, auto_audio = False):
     try: session = pytube.YouTube(url=video_string)
     except:
         try: session = pytube.YouTube(url=f'https://www.youtube.com/watch?v={video_string}')
@@ -112,7 +112,7 @@ def process_video(video_string: str):
     audio_updated = False
     audio_exists = False
 
-    if video_id in records:
+    if video_id in records:  # Existing record
         index_text = f'Loaded #{list(records).index(video_id)}'
         record = records[video_id]
 
@@ -126,7 +126,14 @@ def process_video(video_string: str):
 
         video_exists = 'video' in record and record['video'] is not None
         audio_exists = 'audio' in record and record['audio'] is not None
-    else:
+
+        if video_exists and not os.path.exists(video_path):
+            video_exists = False
+            print('Video has been lost...')
+        if audio_exists and not os.path.exists(audio_path):
+            audio_exists = False
+            print('Audio has been lost...')
+    else:  # New record
         index_text = f'Created #{len(records)}'
         title = session.title
         length = session.length
@@ -146,10 +153,14 @@ def process_video(video_string: str):
     if audio_exists: print(f'{UNDERLINE}Audio | itag {audio_itag} | "{audio_path}"{UNUNDERLINE}')
     else: print(f'{UNDERLINE}No audio found{UNUNDERLINE}')
 
-    if not video_exists: get_video = input_choice(['y', 'n'], lambda x: x.lower(), 'Video [Y]es or [N]o: ') == 'y'
-    else: get_video = False
-    if not audio_exists: get_audio = input_choice(['y', 'n'], lambda x: x.lower(), 'Audio [Y]es or [N]o: ') == 'y'
-    else: get_audio = False
+    if auto_video or auto_audio:
+        get_video = auto_video
+        get_audio = auto_audio
+    else:
+        if not video_exists: get_video = input_choice(['y', 'n'], lambda x: x.lower(), 'Video [Y]es or [N]o: ') == 'y'
+        else: get_video = False
+        if not audio_exists: get_audio = input_choice(['y', 'n'], lambda x: x.lower(), 'Audio [Y]es or [N]o: ') == 'y'
+        else: get_audio = False
 
     if video_exists and audio_exists:
         print('Video and Audio already downloaded, nothing to do')
@@ -303,6 +314,7 @@ forms = {'v': 'video'}
 
 
 def main():
+    os.system('')
     cleanup_temp()
 
     if not os.path.exists(RECORDS_FILE):
@@ -331,7 +343,7 @@ def main():
     print(f'Loaded {len(records)} record/s')
 
     while True:
-        print('|Select the object to process| [V]ideo| [P]laylist (not working yet)'.replace('|', '\n'))
+        print('|Select the object to process| [V]ideo| [P]laylist (not working yet)| [R]epair'.replace('|', '\n'))
         user_choice = input('> ').lower()
 
         if not user_choice:
@@ -345,10 +357,24 @@ def main():
             video_string = input('> ')
 
             print()
-            if first_char == 'v':
-                process_video(video_string)
+            process_video(video_string)
+        elif first_char in 'p':
+            print('Enter url')
+            playlist_string = input('> ')
+
+            print()
+            for url in pytube.Playlist(url=playlist_string):
+                process_video(url, False, True)
         elif first_char in 'r':
-            list_records(records)
+            for video_id in records:
+                record = records[video_id]
+                video_path = records[video_id]['video']
+                audio_path = records[video_id]['audio']
+
+                get_video = video_path and not os.path.exists(video_path)
+                get_audio = audio_path and not os.path.exists(audio_path)
+                if get_video or get_audio:
+                    process_video(video_id, get_video, get_audio)
         else:
             print('Selection not found')
 
