@@ -15,6 +15,7 @@ User ID 243713302750953482 on https://discord.id/ & https://lookup.guru/
 from Record import *
 import pytube
 import ffmpy
+import subprocess
 import os
 records = {}
 RECORDS_FILE = 'records'
@@ -277,6 +278,9 @@ def merge_video_audio(video_path: str, audio_path: str):
     return new_video_path
 
 
+forms = {'v': 'video'}
+
+
 def main():
     os.system('')
     cleanup_temp()
@@ -302,6 +306,16 @@ def main():
         records[record.video_id] = record
 
     print(f'Loaded {len(records)} record/s')
+
+    try:
+        ffmpeg_env = os.getenv('FFMPEG_BINARY', 'ffmpeg')
+        exit_code = subprocess.call([ffmpeg_env, '-version', '-loglevel panic'], stdout=subprocess.DEVNULL)
+    except:
+        exit_code = 1
+
+    if exit_code != 0:
+        print('ffmpeg was not found on your system')
+        return
 
     while True:
         print('|Select the object to process| [V]ideo| [P]laylist (not working yet)| [R]epair'.replace('|', '\n'))
