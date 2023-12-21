@@ -6,7 +6,7 @@ Open the main.py file and follow the instructions by giving a video/playlist lin
 The output folders are `Video` and `Audio.`
 
 ## Setup this thing
-### To get dependencies
+### You must have [Python](https://www.python.org/downloads/), pip bootstrap, ffmpeg.exe and to get dependencies execute this in cmd:
 `pip install -r requirements.txt`
 ### If you can't do the previous step, then add pip to PATH
 Maybe you're asking questions like.. wtf is pip and why are you screaming PATH. \

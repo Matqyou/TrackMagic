@@ -8,25 +8,15 @@ Dependencies:
  - pytube used to download YouTube streams. (pip install pytube)
  - FFmpeg used to convert and merge streams.
 
-Made by matq on Discord
-User ID 243713302750953482 on https://discord.id/ & https://lookup.guru/
+Made by matq#0000 on Discord
 """
 
+from Colors import *
+from Stream import *
 from Record import *
 import pytube
 import ffmpy
 import os
-
-ALLOWED_KEYS = [
-    'video_id',
-    'title',
-    'length',
-    'progressive',
-    'video',
-    'video_stream',
-    'audio',
-    'audio_stream'
-]
 
 records = {}
 RECORDS_FILE = 'records'
@@ -35,18 +25,6 @@ TRACK_DIR = 'Audio\\'
 TEMP_DIR = 'Temp\\'
 TEMP_VIDEO_DIR = TEMP_DIR + 'Video\\'
 TEMP_TRACK_DIR = TEMP_DIR + 'Audio\\'
-GREEN = '\033[32m'
-YELLOW = '\033[33m'
-RED = '\033[31m'
-MAGENTA = '\033[35m'
-CYAN = '\033[36m'
-RESETCOLOR = '\033[39m'
-RESETBGCOLOR = '\033[49m'
-RESET = '\033[0m'
-UNDERLINE = '\033[4m'
-UNUNDERLINE = '\033[24m'
-BOLD = '\033[1m'
-UNBOLD = '\033[2m'
 
 
 def cleanup_temp():
@@ -60,17 +38,13 @@ def cleanup_temp():
         os.rmdir(path)
 
 
-def background_color(r: int, g: int, b: int):
-    print(f'\033[48;2;{r};{g};{b}m', end='')
-
-
-def input_choice(choices, transform, prompt):
+def input_choice(available_choices, input_modifier, prompt):
     while True:
-        user_input = transform(input(prompt))
+        user_input = input_modifier(input(prompt))
         if not user_input:
             continue
 
-        if user_input in choices:
+        if user_input in available_choices:
             return user_input
 
 
@@ -82,10 +56,6 @@ def update_records():
 
     with open(RECORDS_FILE, 'w', encoding='utf-8') as f:
         f.write(new_content)
-
-
-def stream_is_progressive(stream: pytube.Stream):
-    return stream.video_codec is not None and stream.audio_codec is not None
 
 
 # def process_playlist(playlist_url: str):
@@ -102,6 +72,7 @@ def stream_is_progressive(stream: pytube.Stream):
 
 
 def process_video(video_string: str, auto_video=False, auto_audio=False):
+    session = pytube.YouTube(url=video_string)
     try:
         session = pytube.YouTube(url=video_string)
     except:
@@ -192,19 +163,20 @@ def process_video(video_string: str, auto_video=False, auto_audio=False):
         video_streams = all_streams.filter(type='video')
         sorted_streams = sorted([stream for stream in video_streams if stream._filesize != 0],
                                 key=lambda s: int(s.resolution[:len(s.resolution) - 1]), reverse=True)
-        video_stream = sorted_streams[0]
-        record.progressive = stream_is_progressive(video_stream)
+        selected_stream = Stream()
+        selected_stream.pytube_stream = sorted_streams[0]
+        record.progressive = selected_stream.IsProgressive()
 
-        print(f'Video stream {video_stream}')
+        print(f'Video stream {selected_stream.pytube_stream}')
         if record.progressive:  # Video has both visual and audial
             print(f'Video is progressive, getting video')
-            base_video_path = process_video_stream(video_stream, video_progressive)
+            base_video_path = process_video_stream(selected_stream.pytube_stream, record.progressive)
             record.video = base_video_path
-            record.video_stream = video_stream.itag
+            record.video_stream = selected_stream.pytube_stream.itag
         else:  # Video is interlaced
             print(f'Video is interlaced')
             print(f'Downloading video')
-            base_video_path = process_video_stream(video_stream, video_progressive)
+            base_video_path = process_video_stream(selected_stream.pytube_stream, record.progressive)
             audio_updated = True
             if not audio_exists:  # If no audio, download
                 print(f'Downloading audio')
@@ -217,14 +189,14 @@ def process_video(video_string: str, auto_video=False, auto_audio=False):
             else:  # If audio exists, use existing
                 print(f'Found existing audio')
                 record.audio = records[video_id]['audio']
-            record.video = merge_video_audio(base_video_path, audio_path)
-            record.video_stream = video_stream.itag
+            record.video = merge_video_audio(base_video_path, record.audio)
+            record.video_stream = selected_stream.pytube_stream.itag
 
     if get_audio and not audio_exists:  # Requested audio
         audio_updated = True
         if video_exists:  # If video exists, take audio from it
             print(f'Getting audio from video')
-            record.audio = process_audio_from_video(video_path)
+            record.audio = process_audio_from_video(record.video)
         else:  # If no video, download individually
             print(f'Downloading audio')
             audio_streams = all_streams.filter(type='audio').order_by('abr').desc()
@@ -317,7 +289,6 @@ def Initialize():
         record = Record()
         if not container: continue  # (Skip empty records/attribute groups)
         for key, value in container:
-            if key not in ALLOWED_KEYS: continue
             if value == 'None': value = None
             elif value == 'False': value = False
             elif value == 'True': value = True
