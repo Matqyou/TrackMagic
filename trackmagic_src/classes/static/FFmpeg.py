@@ -16,7 +16,7 @@ class FFmpeg:
     def check_ffmpeg():
         try:
             current_directory = os.getcwd()
-            ffmpeg_local_path = os.path.join(current_directory, '../ffmpeg.exe')
+            ffmpeg_local_path = os.path.join(current_directory, '..', 'ffmpeg.exe')
 
             # Check in the current directory first
             if os.path.exists(ffmpeg_local_path):
@@ -24,7 +24,7 @@ class FFmpeg:
                 ffmpy.executable = ffmpeg_local_path
             else:
                 ffmpeg_env = os.getenv('FFMPEG_BINARY', 'ffmpeg')
-            exit_code = subprocess.call([ffmpeg_env, '-version', '-loglevel panic'], stdout=subprocess.DEVNULL)
+            subprocess.call([ffmpeg_env, '-version', '-loglevel panic'], stdout=subprocess.DEVNULL)
         except FileNotFoundError:
             FFmpeg.logger.log('FFmpeg', 'FFmpeg was not found on your system')
             FFmpeg.logger.log('FFmpeg', 'Either you\'ve never downloaded FFmpeg')
@@ -32,22 +32,6 @@ class FFmpeg:
             FFmpeg.logger.log('FFmpeg', '')
             FFmpeg.logger.log('FFmpeg', 'Check readme.md for more information')
             exit(-1)
-
-    # @staticmethod
-    # def process_video_stream(video_stream, progressive: bool):
-    #     video_at = video_stream.download(Configuration.temp_video_dir)
-    #     video_file = os.path.basename(video_at)
-    #     video_filename, video_ext = os.path.splitext(video_file)
-    #     if not progressive:
-    #         return video_at
-    #
-    #     video_path = f'{Configuration.video_dir}{video_filename}.mp4'
-    #     ffmpeg = ffmpy.FFmpeg(inputs={video_at: None},
-    #                           outputs={video_path: None},
-    #                           global_options='-y -loglevel warning')
-    #     ffmpeg.run()
-    #     os.remove(video_at)
-    #     return video_path
 
     @staticmethod
     def process_audio_from_video(video_path: str):

@@ -69,8 +69,18 @@ class Record:
     def serialize(self) -> str:
         return '\n'.join(f'{key}={item}' for key, item in self.__dict__.items()) + '\n' + Configuration.record_seperator
 
+    @staticmethod
+    def _split_attributes(unparsed_attributes: list[str]) -> list[tuple]:
+        result = []
+        for attribute in unparsed_attributes:
+            eq_at = attribute.find('=')
+            key = attribute[:eq_at]
+            value = attribute[eq_at+1:]
+            result.append((key, value))
+        return result
+
     def parse(self, unparsed_attributes: str) -> bool:
-        attributes = [attribute.split('=') for attribute in unparsed_attributes.splitlines(keepends=False)]
+        attributes = Record._split_attributes(unparsed_attributes.splitlines(keepends=False))
 
         if not attributes:
             return False  # Drop bad records (empty lines, corrupted, etc.)
