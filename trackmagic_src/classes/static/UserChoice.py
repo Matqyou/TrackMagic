@@ -1,0 +1,13 @@
+class UserChoice:
+    VIDEO = 0
+    AUDIO = 1
+    VIDEO_AND_AUDIO = 2
+    AUDIO_AND_VIDEO = 2
+
+
+class StreamResult:
+    NO_STREAM = 0
+    INTERLACED_VIDEO_ONLY = 1
+    INTERLACED_AUDIO_ONLY = 2
+    INTERLACED_VIDEO_AUDIO = 3
+    PROGRESSIVE_VIDEO = 4

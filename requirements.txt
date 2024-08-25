@@ -1,0 +1,5 @@
+PyGetWindow
+pywin32
+yt-dlp
+Pillow
+ffmpy
