@@ -15,7 +15,15 @@ class FFmpeg:
     @staticmethod
     def check_ffmpeg():
         try:
-            ffmpeg_env = os.getenv('FFMPEG_BINARY', 'ffmpeg')
+            current_directory = os.getcwd()
+            ffmpeg_local_path = os.path.join(current_directory, '../ffmpeg.exe')
+
+            # Check in the current directory first
+            if os.path.exists(ffmpeg_local_path):
+                ffmpeg_env = ffmpeg_local_path
+                ffmpy.executable = ffmpeg_local_path
+            else:
+                ffmpeg_env = os.getenv('FFMPEG_BINARY', 'ffmpeg')
             exit_code = subprocess.call([ffmpeg_env, '-version', '-loglevel panic'], stdout=subprocess.DEVNULL)
         except FileNotFoundError:
             FFmpeg.logger.log('FFmpeg', 'FFmpeg was not found on your system')
