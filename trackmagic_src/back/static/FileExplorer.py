@@ -1,4 +1,4 @@
-from classes.static.Configuration import Configuration
+from back.static.Configuration import Configuration
 import pygetwindow as gw
 import shutil
 import os

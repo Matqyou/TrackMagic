@@ -1,4 +1,5 @@
 class Configuration:
+    requirements_file: str = '../requirements.txt'
     records_file: str = '../records'
     record_seperator: str = '-= End of record =-\n'
     video_dir: str = '../Videos/'

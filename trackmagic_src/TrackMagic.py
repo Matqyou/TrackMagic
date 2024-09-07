@@ -13,13 +13,12 @@ Dependencies:
 
 Made by mαtq on Discord
 """
-import urllib.parse
 
-from classes.static.UserChoice import StreamResult, UserChoice
-from classes.static.Configuration import Configuration
-from classes.static.UserInput import UserInput
-from classes.Logger import Logger, Launcher
-from classes.static.Utils import Utils
+from back.static.UserChoice import StreamResult, UserChoice
+from back.static.Configuration import Configuration
+from back.static.UserInput import UserInput
+from back.Logger import Logger, Launcher
+from back.static.Utils import Utils
 from urllib import parse
 import subprocess
 import requests
@@ -32,18 +31,19 @@ LOGGER: Logger = LAUNCHER.logger
 LOGGER.set_log_to_file(True)
 
 try:
-    from classes.static.ImageProcessing import ImageProcessing
-    from classes.static.FileExplorer import FileExplorer
-    from classes.static.Downloader import Downloader
-    from classes.Records import Records, Record
-    from classes.static.FFmpeg import FFmpeg
-    import win32clipboard
+    from back.static.ImageProcessing import ImageProcessing
+    from back.static.FileExplorer import FileExplorer
+    from back.static.Downloader import Downloader
+    from back.Records import Records, Record
+    from back.static.FFmpeg import FFmpeg
     import yt_dlp as youtube  # type: ignore
+    import win32clipboard
+    import pygame
     import ffmpy
 except ModuleNotFoundError as e:
     LOGGER.log('LIBRARIES', 'Installing libraries..')
     LOGGER.log('LIBRARIES', f'Reason: {e}')
-    subprocess.call(['pip', 'install', '-r', '..\\requirements.txt'])
+    subprocess.call(['pip', 'install', '-r', Configuration.requirements_file])
     LOGGER.log('LIBRARIES', 'Installed successfully!')
     subprocess.call([sys.executable] + sys.argv)
     exit()

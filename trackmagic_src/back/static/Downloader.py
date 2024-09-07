@@ -1,4 +1,4 @@
-from classes.static.Configuration import Configuration
+from back.static.Configuration import Configuration
 import yt_dlp as youtube
 import os
 

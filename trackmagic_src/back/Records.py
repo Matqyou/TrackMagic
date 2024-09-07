@@ -1,6 +1,6 @@
-from classes.static.Configuration import Configuration
-from classes.static.FileExplorer import FileExplorer
-from classes.Logger import Logger
+from back.static.Configuration import Configuration
+from back.static.FileExplorer import FileExplorer
+from back.Logger import Logger
 import os
 
 

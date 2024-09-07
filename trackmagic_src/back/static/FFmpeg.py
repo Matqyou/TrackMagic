@@ -1,5 +1,5 @@
-from classes.static.Configuration import Configuration
-from classes.Logger import Logger
+from back.static.Configuration import Configuration
+from back.Logger import Logger
 import subprocess
 import ffmpy
 import os
