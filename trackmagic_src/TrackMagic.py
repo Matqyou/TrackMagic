@@ -97,7 +97,7 @@ class TrackMagic:
                 progressive_candidate = stream
             elif video_codec != 'none' and audio_codec == 'none' and interlaced_video is None:
                 interlaced_video = stream
-            elif video_codec == 'none' and not audio_codec in ('none', 'ec-3') and stream['audio_channels'] != 6 and interlaced_audio is None:  # todo: more test cases
+            elif video_codec == 'none' and not audio_codec in ('none', 'ec-3') and stream.get('audio_channels', None) != 6 and interlaced_audio is None:  # todo: more test cases
                 interlaced_audio = stream
 
             if interlaced_video is not None and interlaced_audio is not None:
@@ -307,12 +307,23 @@ def main():
 
     instance.storage.check_integrity()
 
+    advanced = False
     while True:
         print()
         print('To start downloading video/audio, please provide the url of the video or playlist:')
         print('(note if you want to download a playlist, make sure the url starts as follows:')
         print(' https://youtube.com/playlist?list=PLAYLIST_ID)')
+        print()
+        if not advanced:
+            print(' or enable [A]dvanced mode')
+        else:
+            print(' Advanced mode enabled')
+
         media_url = input('> ')
+
+        if media_url.lower() == 'a':
+            advanced = True
+            continue
 
         purl = parse.urlparse(media_url)
         url_path = purl.path
@@ -332,10 +343,24 @@ def main():
 
         if media_type == 'v':
             user_choice = UserChoice.VIDEO
-            print('Picked video media type')
+            print(f'Picked video media type (current extension type {FFmpeg.get_video_extension()})')
+            if advanced:
+                print()
+                print('Change video extension?')
+                print('Enter nothing to skip..')
+                new_extension = input('> ')
+                if new_extension:
+                    FFmpeg.set_video_extension(new_extension)
         elif media_type == 'a':
             user_choice = UserChoice.AUDIO
-            print('Picked audio media type')
+            print(f'Picked audio media type (current extension type {FFmpeg.get_audio_extension()})')
+            if advanced:
+                print()
+                print('Change audio extension?')
+                print('Enter nothing to skip..')
+                new_extension = input('> ')
+                if new_extension:
+                    FFmpeg.set_audio_extension(new_extension)
         elif media_type == 'b':
             user_choice = UserChoice.VIDEO_AND_AUDIO
             print('Picked video and audio media types')

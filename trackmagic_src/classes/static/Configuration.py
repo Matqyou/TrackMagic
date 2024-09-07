@@ -5,3 +5,4 @@ class Configuration:
     audio_dir: str = '../Audio/'
     temp_dir: str = '../temp/'
     audio_ext: str = '.m4a'
+    video_ext: str = '.mp4'
