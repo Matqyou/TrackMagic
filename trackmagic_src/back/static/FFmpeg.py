@@ -18,6 +18,10 @@ class FFmpeg:
         FFmpeg.video_extension = Configuration.video_ext
 
     @staticmethod
+    def get_executable() -> str:
+        return FFmpeg.executable
+
+    @staticmethod
     def set_audio_extension(new_extension: str) -> None:
         FFmpeg.audio_extension = new_extension
 

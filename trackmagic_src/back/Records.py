@@ -1,6 +1,7 @@
 from back.static.Configuration import Configuration
 from back.static.FileExplorer import FileExplorer
 from back.Logger import Logger
+import datetime
 import os
 
 
@@ -27,6 +28,7 @@ class Records:
 
     def save_records(self) -> None:
         new_content = ''
+        new_content += Record().get_record_parameters()
         for record in self.records.values():
             new_content += record.serialize()
 
@@ -48,9 +50,16 @@ class Record:
         self.length: int = None  # type: ignore
         self.video: str = None  # type: ignore
         self.video_stream: str = None  # type: ignore
+        self.video_playlist: str = None  # type: ignore
+        self.video_modified: datetime.datetime = None  # type: ignore
         self.audio: str = None  # type: ignore
         self.audio_stream: str = None  # type: ignore
+        self.audio_playlist: str = None  # type: ignore
+        self.audio_modified: datetime.datetime = None  # type: ignore
         self.thumbnail: str = None  # type: ignore
+        self.thumbnail_url: str = None  # type: ignore
+        self.date_created: datetime.datetime = None  # type: ignore
+        self.date_modified: datetime.datetime = None  # type: ignore
 
     def check_file_integrity(self) -> bool:
         changed_data = False
@@ -66,14 +75,27 @@ class Record:
 
         return changed_data
 
+    def get_record_parameters(self) -> str:
+        return '# ' + ', '.join(self.__dict__.keys()) + '\n'
+
     def serialize(self) -> str:
-        return '\n'.join(f'{key}={item}' for key, item in self.__dict__.items()) + '\n' + Configuration.record_seperator
+        result = []
+        for key, item in self.__dict__.items():
+            if item is not None:
+                result.append(f'{key}={item}')
+        return '\n'.join(result) + '\n' + Configuration.record_seperator
 
     @staticmethod
     def _split_attributes(unparsed_attributes: list[str]) -> list[tuple]:
         result = []
         for attribute in unparsed_attributes:
+            if not attribute or attribute[0] == '#':
+                continue
+
             eq_at = attribute.find('=')
+            if eq_at == -1:
+                continue
+
             key = attribute[:eq_at]
             value = attribute[eq_at+1:]
             result.append((key, value))

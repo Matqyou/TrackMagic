@@ -36,12 +36,20 @@ class FileExplorer:
         return shutil.move(source_filepath, destination_filepath)
 
     @staticmethod
-    def create_folder(folder_path):
+    def rename_base(file_path: str, new_name: str) -> str:
+        file_dir = os.path.dirname(file_path)
+        _, extension = os.path.splitext(file_path)
+        new_filepath = os.path.join(file_dir, f'{new_name}{extension}')
+        os.rename(file_path, new_filepath)
+        return new_filepath
+
+    @staticmethod
+    def create_folder(folder_path: str) -> None:
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
 
     @staticmethod
-    def is_folder_open(folder_path):
+    def is_folder_open(folder_path: str):
         folder_path = os.path.abspath(folder_path)
         folder_name = os.path.basename(folder_path)
         for window in gw.getWindowsWithTitle(folder_name):

@@ -33,6 +33,7 @@ LOGGER.set_log_to_file(True)
 try:
     from back.static.ImageProcessing import ImageProcessing
     from back.static.FileExplorer import FileExplorer
+    from back.Playlists import Playlists, Playlist
     from back.static.Downloader import Downloader
     from back.Records import Records, Record
     from back.static.FFmpeg import FFmpeg
@@ -55,13 +56,17 @@ except Exception as e:
 class TrackMagic:
     def __init__(self):
         self.storage: Records = None  # type: ignore
+        self.playlists: Playlists = None  # type: ignore
 
     def init(self) -> None:
         FFmpeg.init(LOGGER)
         FFmpeg.check_ffmpeg()
+        Downloader.set_ffmpeg_location(FFmpeg.get_executable())
 
         self.storage = Records(LOGGER)
         self.storage.load_records()
+        self.playlists = Playlists(LOGGER)
+        self.playlists.load_playlists(self.storage)
 
     @staticmethod
     def _find_thumbnail(thumbnails: list[dict]) -> tuple[str, bytes]:
@@ -128,7 +133,7 @@ class TrackMagic:
                 return StreamResult.NO_STREAM, None  # type: ignore
 
     def order_playlist(self, playlist_url: str, user_choice: int) -> None:
-        with youtube.YoutubeDL({'quiet': True, 'extract_flat': True}) as ydl:
+        with youtube.YoutubeDL({'ffmpeg_location': FFmpeg.get_executable(),'quiet': True, 'extract_flat': True}) as ydl:
             info = ydl.extract_info(playlist_url, download=False)
             for video_entry in info['entries']:
                 video_url = f'https://www.youtube.com/watch?v={video_entry["id"]}'
@@ -159,11 +164,11 @@ class TrackMagic:
             LOGGER.log('Order', f'Audio: {audio_on_disk}')
             LOGGER.log('Order', f'')
 
-        if not video_needed and not audio_needed:
+        if data_record.thumbnail and not video_needed and not audio_needed:
             LOGGER.log('Order', f'Ordered {ordered_string} from `{video_id}` | No work to do on {data_record.title}')
             return
 
-        with youtube.YoutubeDL({'quiet': True, 'noplaylist': True}) as ydl:
+        with youtube.YoutubeDL({'ffmpeg_location': FFmpeg.get_executable(),'quiet': True, 'noplaylist': True}) as ydl:
             try:
                 info = ydl.extract_info(video_url, download=False)
             except youtube.utils.DownloadError as e:
@@ -177,19 +182,29 @@ class TrackMagic:
             LOGGER.log('Order', f'Title: {video_title}')
             LOGGER.log('Order', f'Length: {video_length}')
 
-        thumbnail_path: str = None  # type: ignore
-        thumbnail_url, thumbnail = TrackMagic._find_thumbnail(info['thumbnails'])
-        if thumbnail:
-            purl = parse.urlparse(thumbnail_url)
-            url_path = purl.path
+        thumbnail_path: str = data_record.thumbnail
+        if thumbnail_path is None:
+            LOGGER.log('Order', f'Getting thumbnail..')
+            thumbnail_url, thumbnail = TrackMagic._find_thumbnail(info['thumbnails'])
+            if thumbnail:
+                purl = parse.urlparse(thumbnail_url)
+                url_path = purl.path
 
-            thumbnail_extension = url_path[url_path.rfind('.'):]
-            thumbnail_path = os.path.join(Configuration.temp_dir, f'thumbnail{thumbnail_extension}')
-            FileExplorer.create_folder(Configuration.temp_dir)
-            with open(thumbnail_path, 'wb') as file:
-                file.write(thumbnail)
-            thumbnail_path = ImageProcessing.convert_to_jpg(thumbnail_path)
-            data_record.thumbnail = thumbnail_url
+                thumbnail_extension = url_path[url_path.rfind('.'):]
+                thumbnail_path = os.path.join(Configuration.temp_dir, f'thumbnail{thumbnail_extension}')
+                FileExplorer.create_folder(Configuration.temp_dir)
+                with open(thumbnail_path, 'wb') as file:  # todo: predetermine filename using title and use it for the video/audio aswell
+                    file.write(thumbnail)
+                thumbnail_path = ImageProcessing.convert_to_jpg(thumbnail_path)
+                thumbnail_path = FileExplorer.rename_base(thumbnail_path, f'{data_record.video_id}')
+                thumbnail_path = FileExplorer.move_to_folder(thumbnail_path, Configuration.thumbnail_dir)
+                data_record.thumbnail = thumbnail_path
+                data_record.thumbnail_url = thumbnail_url
+                self.storage.update_record(data_record)
+                self.storage.save_records()
+            if not video_needed and not audio_needed:
+                LOGGER.log('Order', f'Ordered {ordered_string} from `{video_id}` | {video_title} is done!')
+                return
 
         stream_result: int = None  # type: ignore
         stream_choices: tuple[dict] = None  # type: ignore
@@ -306,13 +321,14 @@ def main():
     instance.init()
 
     instance.storage.check_integrity()
+    instance.playlists.save_playlists()
 
     advanced = False
     while True:
         print()
         print('To start downloading video/audio, please provide the url of the video or playlist:')
         print('(note if you want to download a playlist, make sure the url starts as follows:')
-        print(' https://youtube.com/playlist?list=PLAYLIST_ID)')
+        print(' https://youtube.com/playlist?list=YOUR_PLAYLIST_ID)')
         print()
         if not advanced:
             print(' or enable [A]dvanced mode')

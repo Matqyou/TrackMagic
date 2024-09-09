@@ -1,7 +1,11 @@
 class Configuration:
     requirements_file: str = '../requirements.txt'
     records_file: str = '../records'
-    record_seperator: str = '-= End of record =-\n'
+    playlists_file: str = '../playlists'
+    record_seperator: str = '- End of record -\n'
+    playlist_seperator: str = '- End of playlist -\n'
+    thumbnail_dir: str = '../Thumbnails/'
+    assets_dir: str = '../assets/'
     video_dir: str = '../Videos/'
     audio_dir: str = '../Audio/'
     temp_dir: str = '../temp/'
