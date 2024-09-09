@@ -3,6 +3,7 @@ from front.DynamicRectangle import DynamicRectangle
 from front.TextLabel import TextLabel, SelfAlign
 from front.static.Formatting import Formatting
 from front.ImageLabel import ImageLabel
+from front.ScrollBar import ScrollBar
 from front.ItemList import ItemList
 from TrackMagic import *
 import pygame
@@ -26,7 +27,8 @@ class TrackMagicGui:
         self.width, self.height = self.screen.get_size()
 
     def main(self) -> None:
-        font = pygame.font.SysFont(os.path.join(Configuration.assets_dir, 'Roboto-Medium.ttf'), 30)
+        font = pygame.font.SysFont(os.path.join(Configuration.assets_dir, 'Roboto-Medium.ttf'), 26)
+        font_small = pygame.font.SysFont(os.path.join(Configuration.assets_dir, 'Roboto-Medium.ttf'), 22)
 
         screen = StationaryRectangle((0, 0, self.width, self.height), padding=(15, 15), name='screen')
         rectangle = DynamicRectangle(screen, color=0x000000, padding=(10, 10), spacing=5, name='rectangle')
@@ -34,7 +36,9 @@ class TrackMagicGui:
         search_bar = DynamicRectangle(rectangle, color=0x333333, border=0x666666, fixed_size=(None, 60), padding=(5, 5), align_vertically=False, spacing=5, name='search_bar')
         search = DynamicRectangle(search_bar, color=0x666666, name='search')
         search_button = DynamicRectangle(search_bar, color=0x666666, fixed_size=(60, None), name='search_button')
-        results = ItemList(rectangle, color=0x333333, border=0x666666, padding=(5, 5), spacing=5, name='results')
+        results = DynamicRectangle(rectangle, color=0x333333, border=0x666666, padding=(5, 5), spacing=5, align_vertically=False, name='results')
+        results_list = ItemList(results, spacing=5, name='results')
+        results_bar = ScrollBar(results, color=0x666666, fixed_size=(15, None), name='results_bar')
 
         for playlist in self.trackmagic.playlists.playlists.values():
             thumbnail_surface = None
@@ -42,7 +46,7 @@ class TrackMagicGui:
                 video_id, _ = first_record
                 thumbnail_surface = pygame.image.load(self.trackmagic.storage.get_record(video_id).thumbnail)
 
-            item = DynamicRectangle(results, color=(85, 51, 51, 255), fixed_size=(None, 80), padding=(5, 5), align_vertically=False, spacing=5)
+            item = DynamicRectangle(results_list, color=(85, 51, 51, 255), fixed_size=(None, 80), padding=(5, 5), align_vertically=False, spacing=5)
             title = f'{playlist.name}'
             items = f'{playlist.num_media} items'
             length = f'{Formatting.time_format(playlist.total_length)}'
@@ -52,15 +56,15 @@ class TrackMagicGui:
             top_part = DynamicRectangle(right_part, align_vertically=False)
             bottom_part = DynamicRectangle(right_part, align_vertically=False)
             label = TextLabel(top_part, font, text=title, color=(255, 255, 255), align_y=SelfAlign.CENTER)
-            label2 = TextLabel(bottom_part, font, text=items, color=(255, 255, 255), fixed_size=(100, None), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
-            label3 = TextLabel(bottom_part, font, text=length, color=(255, 255, 255), fixed_size=(75, None), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
+            label2 = TextLabel(bottom_part, font_small, text=items, color=(255, 255, 255), fixed_size=(100, None), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
+            label3 = TextLabel(bottom_part, font_small, text=length, color=(255, 255, 255), fixed_size=(75, None), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
 
         for record in self.trackmagic.storage.records.values():
             thumbnail_surface = None
             if record.thumbnail is not None:
                 thumbnail_surface = pygame.image.load(record.thumbnail)
 
-            item = DynamicRectangle(results, color=(85, 51, 51, 255), fixed_size=(None, 70), padding=(5, 5), align_vertically=False, spacing=5)
+            item = DynamicRectangle(results_list, color=(85, 51, 51, 255), fixed_size=(None, 70), padding=(5, 5), align_vertically=False, spacing=5)
             title = f'{record.title}'
             if record.video and record.audio:
                 media = 'Both'
@@ -77,8 +81,8 @@ class TrackMagicGui:
             top_part = DynamicRectangle(right_part, align_vertically=False)
             bottom_part = DynamicRectangle(right_part, align_vertically=False)
             label = TextLabel(top_part, font, text=title, color=(255, 255, 255), align_y=SelfAlign.CENTER)
-            label2 = TextLabel(bottom_part, font, text=media, color=(255, 255, 255), fixed_size=(100, 0), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
-            label3 = TextLabel(bottom_part, font, text=length, color=(255, 255, 255), fixed_size=(75, 0), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
+            label2 = TextLabel(bottom_part, font_small, text=media, color=(255, 255, 255), fixed_size=(100, 0), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
+            label3 = TextLabel(bottom_part, font_small, text=length, color=(255, 255, 255), fixed_size=(75, 0), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
 
         # title = DynamicRectangle(rectangle, color=0x111111, fixed_size=(None, 150), name='title')
 

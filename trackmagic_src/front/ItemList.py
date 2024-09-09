@@ -4,7 +4,7 @@ import pygame
 
 
 class ItemList(DynamicRectangle):
-    def __init__(self, parent, color=0x000000, border=None, fixed_size: tuple = (None, None), padding: tuple = None, align_vertically: bool = True, spacing: int = 0, name: str = None):
+    def __init__(self, parent, color=None, border=None, fixed_size: tuple = (None, None), padding: tuple = None, align_vertically: bool = True, spacing: int = 0, name: str = None):
         super().__init__(parent, color=color, border=border, fixed_size=fixed_size, padding=padding, align_vertically=align_vertically, spacing=spacing, name=name)
         self.surface: pygame.Surface = None  # type: ignore
 
@@ -28,10 +28,10 @@ class ItemList(DynamicRectangle):
         padded_y = y + self.padding_y
 
         if self.color is not None:
-            pygame.draw.rect(surface, self.color, (x, y, self.width, self.height))
+            pygame.draw.rect(self.surface, self.color, (x, y, self.width, self.height))
 
         if self.border is not None:
-            pygame.draw.rect(surface, self.border, (x, y, self.width, self.height), 1)
+            pygame.draw.rect(self.surface, self.border, (x, y, self.width, self.height), 1)
 
         for child in self.children:
             child.draw(self.surface, (padded_x, padded_y))
