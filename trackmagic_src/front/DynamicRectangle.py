@@ -8,4 +8,4 @@ class DynamicRectangle(StationaryRectangle):
         self.parent = parent
         self.fixed_width, self.fixed_height = fixed_size
 
-        self.parent.children.append(self)
+        self.parent.add_child(self)

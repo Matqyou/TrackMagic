@@ -33,12 +33,12 @@ class TrackMagicGui:
         screen = StationaryRectangle((0, 0, self.width, self.height), padding=(15, 15), name='screen')
         rectangle = DynamicRectangle(screen, color=0x000000, padding=(10, 10), spacing=5, name='rectangle')
 
+        # navbar = DynamicRectangle(rectangle, color=0x333333, border=0x666666, fixed_size=(None, 60), padding=(5, 5), align_vertically=False, spacing=5, name='navbar')
         search_bar = DynamicRectangle(rectangle, color=0x333333, border=0x666666, fixed_size=(None, 60), padding=(5, 5), align_vertically=False, spacing=5, name='search_bar')
         search = DynamicRectangle(search_bar, color=0x666666, name='search')
         search_button = DynamicRectangle(search_bar, color=0x666666, fixed_size=(60, None), name='search_button')
         results = DynamicRectangle(rectangle, color=0x333333, border=0x666666, padding=(5, 5), spacing=5, align_vertically=False, name='results')
         results_list = ItemList(results, spacing=5, name='results')
-        results_bar = ScrollBar(results, color=0x666666, fixed_size=(15, None), name='results_bar')
 
         for playlist in self.trackmagic.playlists.playlists.values():
             thumbnail_surface = None
@@ -84,6 +84,8 @@ class TrackMagicGui:
             label2 = TextLabel(bottom_part, font_small, text=media, color=(255, 255, 255), fixed_size=(100, 0), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
             label3 = TextLabel(bottom_part, font_small, text=length, color=(255, 255, 255), fixed_size=(75, 0), align_x=SelfAlign.LEFT, align_y=SelfAlign.CENTER)
 
+        results_bar = ScrollBar(results, results_list, color=0x666666, inner_color=0x444444, fixed_size=(15, None), name='results_bar')
+
         # title = DynamicRectangle(rectangle, color=0x111111, fixed_size=(None, 150), name='title')
 
         screen.update_children()
@@ -97,6 +99,15 @@ class TrackMagicGui:
                 elif event.type == pygame.VIDEORESIZE:
                     screen.width, screen.height = event.w, event.h
                     screen.update_children()
+                # elif event.type == pygame.KEYDOWN:
+                #     if event.key == pygame.K_w:
+                #         results_bar.progress += 0.01
+                #         results_bar.update_slider()
+                #         results_list.set_progress(results_bar.progress)
+                #     elif event.key == pygame.K_s:
+                #         results_bar.progress -= 0.01
+                #         results_bar.update_slider()
+                #         results_list.set_progress(results_bar.progress)
 
             self.screen.fill(0x440066)
             screen.draw(self.screen)

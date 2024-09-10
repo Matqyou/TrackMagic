@@ -19,6 +19,9 @@ class StationaryRectangle:
 
         self.children = []
 
+    def add_child(self, child) -> None:
+        self.children.append(child)
+
     def update_children(self) -> None:
         num_children = len(self.children)
         if num_children == 0:
