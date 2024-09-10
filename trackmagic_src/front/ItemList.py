@@ -4,20 +4,22 @@ import pygame
 
 
 class ItemList(DynamicRectangle):
-    def __init__(self, parent, color=None, border=None, fixed_size: tuple = (None, None), padding: tuple = None, align_vertically: bool = True, spacing: int = 0, name: str = None):
-        super().__init__(parent, color=color, border=border, fixed_size=fixed_size, padding=padding, align_vertically=align_vertically, spacing=spacing, name=name)
+    def __init__(self, parent, events: bool = False, color=None, border=None, fixed_size: tuple = (None, None), padding: tuple = None, align_vertically: bool = True, spacing: int = 0, name: str = None):
+        super().__init__(parent, events=events, color=color, border=border, fixed_size=fixed_size, padding=padding, align_vertically=align_vertically, spacing=spacing, name=name)
 
         self.surface: pygame.Surface = None  # type: ignore
         self.total_width: int = None  # type: ignore
         self.total_height: int = None  # type: ignore
+        self.scroll_width: int = None  # type: ignore
+        self.scroll_height: int = None  # type: ignore
         self.length_offset: float = 0
         self.last_length_offset: float = 0
+        self.get_length = (lambda: self.scroll_width, lambda: self.scroll_height)[self.align_vertically]
+        self.right_x: int = None  # type: ignore
+        self.bottom_y: int = None  # type: ignore
 
-    def get_length(self) -> int:
-        return (self.total_width, self.total_height)[self.align_vertically]
-
-    def set_progress(self, new_progress: float) -> None:
-        self.length_offset = (self.total_height - self.height) * new_progress
+    def set_offset(self, new_offset: float) -> None:
+        self.length_offset = new_offset
         if self.length_offset != self.last_length_offset:
             self.last_length_offset = self.length_offset
             self.update_children()
@@ -30,6 +32,7 @@ class ItemList(DynamicRectangle):
             self.total_height = 0
             return
 
+        # todo: optimize
         fixed_width = 0
         fixed_height = 0
         for child in self.children:
@@ -39,8 +42,8 @@ class ItemList(DynamicRectangle):
                 fixed_height += child.fixed_height
 
         total_spacing = self.spacing * (num_children - 1)
-        self.total_height = fixed_height + total_spacing
         self.total_width = fixed_width + total_spacing
+        self.total_height = fixed_height + total_spacing
 
     def update_surface(self) -> None:
         width = Numbers.clamp_bottom(self.width - self.padding_x2, 0)
@@ -49,6 +52,9 @@ class ItemList(DynamicRectangle):
 
     def update_children(self) -> None:
         self.update_surface()
+        self.update_edges()
+        self.scroll_width = self.total_width - self.width
+        self.scroll_height = self.total_height - self.height
 
         num_children = len(self.children)
         if num_children == 0:
@@ -116,11 +122,15 @@ class ItemList(DynamicRectangle):
         padded_y = y + self.padding_y
 
         if self.color is not None:
-            pygame.draw.rect(self.surface, self.color, (x, y, self.width, self.height))
+            self.surface.fill(self.color)
 
         if self.border is not None:
-            pygame.draw.rect(self.surface, self.border, (x, y, self.width, self.height), 1)
+            pygame.draw.rect(self.surface, self.border, (0, 0, self.width, self.height), 1)
 
         for child in self.children:
+            if child.x > self.right_x or child.right_x < self.x or \
+                    child.y > self.bottom_y or child.bottom_y < self.y:
+                continue
+
             child.draw(self.surface, (padded_x, padded_y))
         surface.blit(self.surface, (padded_x, padded_y))

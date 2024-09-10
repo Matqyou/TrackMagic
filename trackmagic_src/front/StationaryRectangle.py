@@ -2,8 +2,11 @@ import pygame
 
 
 class StationaryRectangle:
-    def __init__(self, rect: tuple, color=None, border=None, padding: tuple = None, align_vertically: bool = True, spacing: int = 0, name: str = None):
+    def __init__(self, rect: tuple, events: bool = False, color=None, border=None, padding: tuple = None, align_vertically: bool = True, spacing: int = 0, name: str = None):
         self.x, self.y, self.width, self.height = rect
+        self.right_x = self.x + self.width
+        self.bottom_y = self.y + self.height
+        self.events = events
         self.color = color
         self.border = border
 
@@ -22,7 +25,13 @@ class StationaryRectangle:
     def add_child(self, child) -> None:
         self.children.append(child)
 
+    def update_edges(self) -> None:  # todo: optimize
+        self.right_x = self.x + self.width
+        self.bottom_y = self.y + self.height
+
     def update_children(self) -> None:
+        self.update_edges()
+
         num_children = len(self.children)
         if num_children == 0:
             return
@@ -77,6 +86,15 @@ class StationaryRectangle:
                     child.width = single_width
                 current_x += child.width + self.spacing
                 child.update_children()
+
+    def event(self, event: pygame.event.Event) -> bool:
+        if not self.events:
+            return False
+
+        for child in self.children:
+            if child.event(event):
+                return True
+        return False
 
     def draw(self, surface: pygame.Surface, offset: tuple = None) -> None:
         if offset is None:

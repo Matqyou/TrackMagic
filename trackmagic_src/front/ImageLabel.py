@@ -14,6 +14,7 @@ class ImageLabel(DynamicRectangle):
 
     def update_surface(self) -> None:
         self.surface = pygame.Surface((Numbers.clamp_bottom(self.width, 0), Numbers.clamp_bottom(self.height, 0)))
+        self.surface.fill(0x404040)
 
         if self.image is None:
             return

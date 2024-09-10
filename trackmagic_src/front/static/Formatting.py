@@ -7,7 +7,5 @@ class Formatting:
 
         if hours > 0:
             return f'{hours}:{minutes:0>2}:{seconds:0>2}'
-        elif minutes > 0:
-            return f'{minutes}:{seconds:0>2}'
-        return f'{seconds}'
+        return f'{minutes}:{seconds:0>2}'
 
